@@ -38,6 +38,25 @@ async def analyze_video(file: UploadFile = File(...)):
 
             frame.flags.writeable = True
             frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+
+            # Extract Landmarks
+            try:
+                landmarks = results.pose_landmarks.landmark
+            except:
+                pass
+
+            shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+            elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+            wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+
+            angle = calculate_angle(shoulder, elbow, wrist)
+
+            # Visualize
+            cv.putText(frame, str(angle), 
+                            tuple(np.multiply(elbow, [1620, 1080]).astype(int)),
+                                  cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA
+                        )
+
             mp_drawing.draw_landmarks(
                 frame,
                 results.pose_landmarks,
@@ -54,3 +73,16 @@ async def analyze_video(file: UploadFile = File(...)):
     output.release()
     # cv.destroyAllWindows()
     return {"message": "Video Processed", "file": "processed.mp4"}
+
+
+def calculate_angle(a, b, c):
+    a = np.array(a) # First
+    b = np.array(b) # Midpoint
+    c = np.array(c) # Endpoint
+
+    radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+    angle = np.abs(radians*180.0/np.pi)
+
+    if angle > 180.0:
+        angle = 360-angle
+    return angle
