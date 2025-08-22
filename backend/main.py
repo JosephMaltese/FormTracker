@@ -24,6 +24,10 @@ async def analyze_video(file: UploadFile = File(...)):
     height = int(capture.get(cv.CAP_PROP_FRAME_HEIGHT))
     output = cv.VideoWriter("processed.mp4", fourcc, fps, (width, height))
     
+    # Initialize rep count to 0, and stage as nothing
+    counter = 0
+    stage = None
+
     with mp_pose.Pose(
         min_detection_confidence = 0.5,
         min_tracking_confidence = 0.5) as pose:
@@ -42,20 +46,50 @@ async def analyze_video(file: UploadFile = File(...)):
             # Extract Landmarks
             try:
                 landmarks = results.pose_landmarks.landmark
+
+                shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+
+                angle = calculate_angle(shoulder, elbow, wrist)
+
+                # Visualize angle
+                cv.putText(frame, str(angle), 
+                                tuple(np.multiply(elbow, [1620, 1080]).astype(int)),
+                                    cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA
+                            )
+                
+                # rep counter logic
+                if angle > 160.0:
+                    stage = "down"
+                if angle < 40.0 and stage == "down":
+                    stage = "up"
+                    counter += 1
+                    print(counter)
+                
             except:
                 pass
 
-            shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-            elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
-            wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+            # Render curl counter
+            # Setup status box
+            cv.rectangle(frame, (0,0), (225,73), (245,117,16), -1)
 
-            angle = calculate_angle(shoulder, elbow, wrist)
+            # Rep data
+            cv.putText(frame, 'REPS', (15,12), 
+                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
+            cv.putText(frame, str(counter), 
+                        (10,60), 
+                        cv.FONT_HERSHEY_SIMPLEX, 2, (255,255,255), 2, cv.LINE_AA)
+            
+            # Stage data
+            cv.putText(frame, 'STAGE', (65,12), 
+                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
+            cv.putText(frame, stage, 
+                        (60,60), 
+                        cv.FONT_HERSHEY_SIMPLEX, 2, (255,255,255), 2, cv.LINE_AA)
 
-            # Visualize
-            cv.putText(frame, str(angle), 
-                            tuple(np.multiply(elbow, [1620, 1080]).astype(int)),
-                                  cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA
-                        )
+
+            
 
             mp_drawing.draw_landmarks(
                 frame,
