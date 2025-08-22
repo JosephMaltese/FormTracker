@@ -1,5 +1,4 @@
 import React from 'react';
-import ExerciseCarousel from "./ui/exerciseCarousel"
 
 class FileInput extends React.Component {
     constructor(props) {
@@ -32,7 +31,6 @@ class FileInput extends React.Component {
                     <br />
                     <button id="submit" type="submit" disabled={!this.state.fileSelected}>Submit</button>
                 </form>
-                <ExerciseCarousel />
             </div>
 
         )

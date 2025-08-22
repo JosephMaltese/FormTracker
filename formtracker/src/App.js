@@ -2,6 +2,7 @@ import './App.css';
 import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from "./views/Home"
+import SelectExercise from './views/SelectExercise';
 
 
 function App() {
@@ -28,10 +29,12 @@ function App() {
     <BrowserRouter>
       <nav>
         <Link to="/">Home</Link> |{" "}
+        <Link to="/select-exercise"></Link>|{" "}
       </nav>
 
       <Routes>
         <Route path="/" element={<Home />}/>
+        <Route path="/select-exercise" element={<SelectExercise />}/>
       </Routes>
     </BrowserRouter>
   );

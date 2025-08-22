@@ -1,11 +1,13 @@
 import React from 'react';
-import FileInput from '../components/FileInput';
+import { Link } from 'react-router-dom';
 
 function Home () {
     return (
         <div>
             <h1>Form Tracker</h1>
-            <FileInput />
+            <div>
+                <Link to="/select-exercise">Analyze an Exercise</Link>
+            </div>
         </div>
     )
 }
