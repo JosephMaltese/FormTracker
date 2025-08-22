@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from "./views/Home"
 import SelectExercise from './views/SelectExercise';
+import UploadVideo from './views/UploadVideo';
 
 
 function App() {
@@ -27,14 +28,15 @@ function App() {
     //   </div>
     // </div>
     <BrowserRouter>
-      <nav>
+      {/* <nav>
         <Link to="/">Home</Link> |{" "}
         <Link to="/select-exercise"></Link>|{" "}
-      </nav>
+      </nav> */}
 
       <Routes>
         <Route path="/" element={<Home />}/>
         <Route path="/select-exercise" element={<SelectExercise />}/>
+        <Route path="/upload-video" element={<UploadVideo/>}/>
       </Routes>
     </BrowserRouter>
   );
