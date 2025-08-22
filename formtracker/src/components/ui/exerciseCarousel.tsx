@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Card, CardContent } from "./card"
+import { Card, CardContent, CardTitle } from "./card"
 import {
   Carousel,
   CarouselContent,
@@ -29,9 +29,10 @@ export default function ExerciseCarousel() {
           <CarouselItem key={index}>
             <div className="p-1">
               <Card>
-                <CardContent className="flex aspect-square items-center justify-center p-6">
-                  <span className="text-4xl font-semibold">{index + 1}</span>
-                </CardContent>
+                    <img src={item[0]} alt={item[1]} className="rounded-xl max-h-[600px]"></img>
+                    <h2 className="absolute bottom-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-center text-2xl font-bold drop-shadow-lg">
+                      {item[1]}
+                    </h2>
               </Card>
             </div>
           </CarouselItem>
