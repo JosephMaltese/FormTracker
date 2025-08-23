@@ -30,7 +30,7 @@ export default function UploadVideo() {
     }
 
     return (
-        <div className='flex flex-col items-center mt-14'>
+        <div className='flex flex-col items-center mt-20'>
             {videoFile ? (
                 <p>{videoFile.name}</p>
             ) : (

@@ -5,7 +5,7 @@ import Home from "./views/Home"
 import SelectExercise from './views/SelectExercise';
 import UploadVideo from './views/UploadVideo';
 import Results from './views/Results';
-
+import Navbar from './components/ui/navbar';
 
 function App() {
   // const webcamRef = useRef(null);
@@ -29,6 +29,7 @@ function App() {
     //   </div>
     // </div>
     <BrowserRouter>
+      <Navbar />
       {/* <nav>
         <Link to="/">Home</Link> |{" "}
         <Link to="/select-exercise"></Link>|{" "}

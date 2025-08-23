@@ -5,11 +5,11 @@ export default function SelectExercise() {
     const [selectedExercise, setSelectedExercise] = useState<string>('BENCH PRESS');
     return (
         <div className='h-screen flex flex-col justify-center text-center'>
-            <h1 className='text-5xl font-bold mt-8'>Select an Exercise to Analyze</h1>
+            <h1 className='text-5xl font-bold mt-16'>Select an Exercise to Analyze</h1>
             <div className='m-auto flex justify-center'>
                 <ExerciseCarousel onSelect={setSelectedExercise} />
             </div>
-            <div className='flex flex-row justify-between px-2 pb-3'>
+            <div className='flex flex-row justify-between px-2 mb-3'>
                 <MenuButton text="< Previous page" link="/" />
                 <MenuButton text="Confirm Selection >" link={`/upload-video?exercise=${encodeURIComponent(selectedExercise)}`} />
             </div>
