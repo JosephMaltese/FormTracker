@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from "./views/Home"
 import SelectExercise from './views/SelectExercise';
 import UploadVideo from './views/UploadVideo';
+import Results from './views/Results';
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
         <Route path="/" element={<Home />}/>
         <Route path="/select-exercise" element={<SelectExercise />}/>
         <Route path="/upload-video" element={<UploadVideo/>}/>
+        <Route path="/results" element={<Results/>} />
       </Routes>
     </BrowserRouter>
   );
