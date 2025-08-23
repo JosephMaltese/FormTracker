@@ -1,33 +1,48 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
-class FileInput extends React.Component {
-    constructor(props) {
+interface FileInputProps {
+    onFileSelect: (file: File) => void;
+}
+
+interface FileInputState {
+    fileSelected: boolean;
+    videoUrl: string | null;
+  }
+
+class FileInput extends React.Component<FileInputProps, FileInputState> {
+    private fileInput: React.RefObject<HTMLInputElement | null>;
+    constructor(props: FileInputProps) {
         super(props);
         this.state = { fileSelected: false,
                         videoUrl: null
-
                     }
         // this.handleSubmit = this.handleSubmit.bind(this);
         this.handleFileChange = this.handleFileChange.bind(this);
         this.handleDivClick = this.handleDivClick.bind(this);
+
         this.fileInput = React.createRef();
     }
     // handleSubmit(event) {
     //     event.preventDefault();
     //     alert(`Selected file - ${this.fileInput.current.files[0].name}`);
     // }
-    handleFileChange(event) {
-        if (event.target.files.length > 0) {
-            const file = event.target.files[0];
-            const url = URL.createObjectURL(file);
-            this.setState({
-                fileSelected: true,
-                videoUrl: url
-            });
+    handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+        if (event.target.files) {
+            if (event.target.files.length > 0) {
+                const file = event.target.files[0];
+                const url = URL.createObjectURL(file);
+                this.setState({
+                    fileSelected: true,
+                    videoUrl: url
+                });
+                this.props.onFileSelect(file);
+            }
         }
     }
     handleDivClick() {
-        this.fileInput.current.click();
+        if (this.fileInput.current) {
+            this.fileInput.current.click();
+        }
     }
 
     render() {
@@ -56,7 +71,7 @@ class FileInput extends React.Component {
                 />
                 { this.state.fileSelected ? (
                     <video
-                    src={this.state.videoUrl}
+                    src={this.state.videoUrl ? this.state.videoUrl : ''}
                     controls
                     className="w-full h-full object-contain"
                     />

@@ -9,7 +9,7 @@ export default function SelectExercise() {
             <div className='m-auto flex justify-center'>
                 <ExerciseCarousel onSelect={setSelectedExercise} />
             </div>
-            <div className='flex flex-row justify-between px-2 pb-2'>
+            <div className='flex flex-row justify-between px-2 pb-3'>
                 <MenuButton text="< Previous page" link="/" />
                 <MenuButton text="Confirm Selection >" link={`/upload-video?exercise=${encodeURIComponent(selectedExercise)}`} />
             </div>
