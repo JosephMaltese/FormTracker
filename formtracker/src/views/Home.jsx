@@ -19,7 +19,7 @@ function Home () {
     }
 
     return (
-        <div className='mt-20'>
+        <div className='mt-20 dark:text-white'>
             <h1>Form Tracker</h1>
             <h2>Welcome, {session?.user?.email}</h2>
             <div>

@@ -61,7 +61,7 @@ class FileInput extends React.Component<FileInputProps, FileInputState> {
             //         <button id="submit" type="submit" disabled={!this.state.fileSelected}>Submit</button>
             //     </form>
             // </div>
-            <div className='w-[80%] h-96 border-[4px] border-dotted border-black rounded-md flex justify-center items-center hover:cursor-pointer' onClick={this.handleDivClick}>
+            <div className='w-[80%] h-96 border-[4px] border-dotted border-black dark:border-white rounded-md flex justify-center items-center hover:cursor-pointer dark:bg-gray-700' onClick={this.handleDivClick}>
                 <input 
                     type="file" 
                     accept=".mp4"
@@ -78,7 +78,7 @@ class FileInput extends React.Component<FileInputProps, FileInputState> {
                     ) : (
                     <div className='flex flex-col items-center'>
                         <img src="/images/fileIcon.png" alt="File Upload Icon" className='w-20 h-20'></img>
-                        <h2 className='font-extrabold'>Upload a file</h2>
+                        <h2 className='font-extrabold mt-3'>Upload a file</h2>
                         <p className='text-center w-64'>Click to browse and select a video file of 10-15 seconds in length</p>
                     </div>   
                     )

@@ -11,7 +11,6 @@ import {
 export default function ExerciseCarousel({ onSelect } : { onSelect: (exercise: string) => void }) {
   const items = [["/images/benchpress.png", "BENCH PRESS"], ["/images/bicepcurl.png", "BICEP CURL"], ["/images/squat.png", "SQUAT"]]
 
-
   return (
     <Carousel className="w-[80%] max-w-xl" setApi={(carouselApi) => {
       if (!carouselApi) return;
@@ -32,19 +31,23 @@ export default function ExerciseCarousel({ onSelect } : { onSelect: (exercise: s
         items.map((item, index) => (
           <CarouselItem key={index}>
             <div className="p-1">
-              <Card>
-                    <img src={item[0]} alt={item[1]} className="rounded-xl max-h-[560px]"></img>
-                    <h2 className="absolute bottom-1/2 left-1/2 -translate-x-1/2 translate-y-1/2 text-white text-center text-4xl font-bold drop-shadow-lg bg-neutral-700/50 w-full p-4">
-                        {item[1]}
+              <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="relative">
+                  <img src={item[0]} alt={item[1]} className="rounded-xl max-h-[560px] w-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6">
+                    <h2 className="text-white text-center text-3xl md:text-4xl font-bold drop-shadow-lg">
+                      {item[1]}
                     </h2>
+                  </div>
+                </div>
               </Card>
             </div>
           </CarouselItem>
         ))
       }
       </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
+      <CarouselPrevious className="bg-white/90 hover:bg-white text-gray-900 border-0 shadow-lg" />
+      <CarouselNext className="bg-white/90 hover:bg-white text-gray-900 border-0 shadow-lg" />
     </Carousel>
   )
 }
