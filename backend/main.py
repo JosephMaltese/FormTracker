@@ -8,6 +8,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 import numpy as np
+import math
 
 app = FastAPI()
 
@@ -25,11 +26,11 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
     output = cv.VideoWriter("processed.mp4", fourcc, fps, (width, height))
 
     if (exercise == "BICEP CURL"):
-        results = analyze_bicep_curl(output, capture)
+        score = analyze_bicep_curl(output, capture)
 
     capture.release()
     output.release()
-    return {"message": "Video Processed", "file": "processed.mp4"}
+    return {"message": "Video Processed", "file": "processed.mp4", "total_score": score}
 
 
 def calculate_angle(a, b, c):
@@ -46,7 +47,6 @@ def calculate_angle(a, b, c):
 
 
 def analyze_bicep_curl(output, capture):
-        # Initialize rep count to 0, and stage as nothing
         attempted_rep_counter = 0
         complete_rom_rep_counter = 0
         partial_rom_rep_counter = 0
@@ -58,6 +58,10 @@ def analyze_bicep_curl(output, capture):
         cheat_rep_detected = False
         torso_angle_at_rep_start = None
         starting_torso_angle_recorded = False
+        fps = capture.get(cv.CAP_PROP_FPS)
+        frame_count = 0
+        eccentric_durations = []
+        eccentric_start_time = None
 
         with mp_pose.Pose(
         min_detection_confidence = 0.5,
@@ -73,6 +77,9 @@ def analyze_bicep_curl(output, capture):
 
                 frame.flags.writeable = True
                 frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+
+                frame_count += 1
+                current_time = frame_count / fps
 
                 # Extract Landmarks
                 try:
@@ -114,41 +121,47 @@ def analyze_bicep_curl(output, capture):
 
                     # rep counter logic
                     if last_recorded_angle is not None:
-                        if (angle - last_recorded_angle <= -5.0) and (stage is None or stage == "moving_down"):
-                            stage="moving_up"
+                        if (angle - last_recorded_angle <= -5.0):
+                            if (stage is None or stage == "moving_down"):
+                                stage="moving_up"
 
-                            # Start tracking a new rep
-                            min_angle_in_rep = angle
-                            max_angle_in_rep = max(last_recorded_angle, angle)
+                                # Start tracking a new rep
+                                min_angle_in_rep = angle
+                                max_angle_in_rep = max(last_recorded_angle, angle)
+
+                                if eccentric_start_time is not None:
+                                    eccentric_duration = current_time - eccentric_start_time
+                                    eccentric_durations.append(eccentric_duration)
+                                    print(f"Eccentric duration:", eccentric_duration)
+                                    eccentric_start_time = None
 
                             last_recorded_angle = angle
-                        elif (angle - last_recorded_angle <= -5.0):
-                            last_recorded_angle = angle
-                        elif (angle - last_recorded_angle >= 5.0) and stage=="moving_up":
-                            stage = "moving_down"
-                            attempted_rep_counter += 1
-                            last_recorded_angle = angle
-                            
-                            # Update min/max angles for this rep
-                            if min_angle_in_rep is not None:
-                                min_angle_in_rep = min(min_angle_in_rep, angle)
-                                max_angle_in_rep = max(max_angle_in_rep, angle)
-                            
-                            # Determine if this was a complete or partial rep
-                            if min_angle_in_rep is not None and max_angle_in_rep is not None:
-                                if min_angle_in_rep < 40.0 and max_angle_in_rep > 160.0:
-                                    complete_rom_rep_counter += 1
-                                    print("Complete rep")
-                                else:
-                                    partial_rom_rep_counter += 1
-                                    print("Partial rep")
-                            
-                            # Reset for next rep
-                            min_angle_in_rep = None
-                            max_angle_in_rep = None
-                            cheat_rep_detected = False
-                            starting_torso_angle_recorded = False
                         elif (angle - last_recorded_angle >= 5.0):
+                            if stage=="moving_up":
+                                stage = "moving_down"
+                                attempted_rep_counter += 1
+
+                                eccentric_start_time = current_time
+                                
+                                # Update min/max angles for this rep
+                                if min_angle_in_rep is not None:
+                                    min_angle_in_rep = min(min_angle_in_rep, angle)
+                                    max_angle_in_rep = max(max_angle_in_rep, angle)
+                                
+                                # Determine if this was a complete or partial rep
+                                if min_angle_in_rep is not None and max_angle_in_rep is not None:
+                                    if min_angle_in_rep < 40.0 and max_angle_in_rep > 160.0:
+                                        complete_rom_rep_counter += 1
+                                        print("Complete rep")
+                                    else:
+                                        partial_rom_rep_counter += 1
+                                        print("Partial rep")
+                                
+                                # Reset for next rep
+                                min_angle_in_rep = None
+                                max_angle_in_rep = None
+                                cheat_rep_detected = False
+                                starting_torso_angle_recorded = False
                             last_recorded_angle = angle
                     else:
                         if angle > 140.0:
@@ -194,6 +207,43 @@ def analyze_bicep_curl(output, capture):
                     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style()
                 )
                 output.write(frame)
+        print("Eccentric durations:", eccentric_durations)
         print("Complete ROM rep count:", complete_rom_rep_counter)
         print("Partial ROM rep count:", partial_rom_rep_counter)
         print("Cheat rep count:", cheat_rep_count)
+
+
+        # Initialize total form analysis score to 0
+        total_score = 0
+
+        # First, award the user 10 points for completing at least one valid repetition (up + down movement)
+        if attempted_rep_counter >= 1:
+            total_score += 10
+        
+        # Next, evaluate the ROM of the reps. Award 2 points for full ROM, 1 point for partial ROM
+        possible_rom_points = attempted_rep_counter * 2
+        acheived_rom_points = (complete_rom_rep_counter * 2) + (partial_rom_rep_counter)
+        rom_score = (acheived_rom_points / possible_rom_points) * 30
+        total_score += rom_score
+
+        # Then, assess the stability of the user's form
+        stable_reps = attempted_rep_counter - cheat_rep_count
+        stability_score = (stable_reps / attempted_rep_counter) * 40
+        total_score += stability_score
+
+        # Finally, asses the duration of the user's eccentric motion
+        possible_duration_points = attempted_rep_counter * 10
+        duration_points = 0
+        for duration in eccentric_durations:
+            duration_points += eccentric_score(duration)
+        duration_score = (duration_points / possible_duration_points) * 20
+        total_score += duration_score
+
+        return total_score
+
+        
+def eccentric_score(duration):
+    if duration < 0.5:
+        return 0
+    # Gaussian curve centered at 3s, width 1s
+    return round(10 * math.exp(-((duration - 3)**2) / (2 * (1**2))))
