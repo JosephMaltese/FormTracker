@@ -50,10 +50,14 @@ def analyze_bicep_curl(output, capture):
         attempted_rep_counter = 0
         complete_rom_rep_counter = 0
         partial_rom_rep_counter = 0
+        cheat_rep_count = 0
         stage = None
         last_recorded_angle = None
         min_angle_in_rep = None
         max_angle_in_rep = None
+        cheat_rep_detected = False
+        torso_angle_at_rep_start = None
+        starting_torso_angle_recorded = False
 
         with mp_pose.Pose(
         min_detection_confidence = 0.5,
@@ -77,28 +81,50 @@ def analyze_bicep_curl(output, capture):
                     shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
                     elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
                     wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+                    hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+                    vertical = np.array([0,1])
 
                     angle = calculate_angle(shoulder, elbow, wrist)
 
-                    # Visualize angle
+                    torso_angle = calculate_angle(shoulder, hip, np.array(hip)+vertical)
+
+                    # Visualize angles
                     cv.putText(frame, str(angle), 
                                     tuple(np.multiply(elbow, [1620, 1080]).astype(int)),
                                         cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA
                                 )
+                    cv.putText(frame, str(torso_angle), 
+                                    tuple(np.multiply(hip, [1620, 1080]).astype(int)),
+                                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA
+                                )
                     
+                    # Record starting torso angle when we're in the down position
+                    if angle >= 160.0 and not starting_torso_angle_recorded:
+                        torso_angle_at_rep_start = torso_angle
+                        starting_torso_angle_recorded = True
+                    
+                    # Check for cheating during the concentric phase (when going up)
+                    if stage == "moving_up" and angle <= 45.0 and starting_torso_angle_recorded:
+                        torso_movement = abs(torso_angle - torso_angle_at_rep_start)
+                        if torso_movement >= 6.0 and not cheat_rep_detected:
+                            cheat_rep_detected = True
+                            cheat_rep_count += 1
+                            print(f"Cheat detected! Torso movement: {torso_movement:.1f}°")
+
+
                     # rep counter logic
                     if last_recorded_angle is not None:
-                        if (angle - last_recorded_angle <= -20.0) and (stage is None or stage == "moving_down"):
+                        if (angle - last_recorded_angle <= -5.0) and (stage is None or stage == "moving_down"):
                             stage="moving_up"
 
                             # Start tracking a new rep
                             min_angle_in_rep = angle
                             max_angle_in_rep = max(last_recorded_angle, angle)
 
-
                             last_recorded_angle = angle
-                            
-                        elif (angle - last_recorded_angle >= 20.0) and stage=="moving_up":
+                        elif (angle - last_recorded_angle <= -5.0):
+                            last_recorded_angle = angle
+                        elif (angle - last_recorded_angle >= 5.0) and stage=="moving_up":
                             stage = "moving_down"
                             attempted_rep_counter += 1
                             last_recorded_angle = angle
@@ -112,12 +138,18 @@ def analyze_bicep_curl(output, capture):
                             if min_angle_in_rep is not None and max_angle_in_rep is not None:
                                 if min_angle_in_rep < 40.0 and max_angle_in_rep > 160.0:
                                     complete_rom_rep_counter += 1
+                                    print("Complete rep")
                                 else:
                                     partial_rom_rep_counter += 1
+                                    print("Partial rep")
                             
                             # Reset for next rep
                             min_angle_in_rep = None
                             max_angle_in_rep = None
+                            cheat_rep_detected = False
+                            starting_torso_angle_recorded = False
+                        elif (angle - last_recorded_angle >= 5.0):
+                            last_recorded_angle = angle
                     else:
                         if angle > 140.0:
                             last_recorded_angle = angle
@@ -126,10 +158,6 @@ def analyze_bicep_curl(output, capture):
                     if min_angle_in_rep is not None:
                         min_angle_in_rep = min(min_angle_in_rep, angle)
                         max_angle_in_rep = max(max_angle_in_rep, angle)
-
-                    
-
-                    
                 except:
                     pass
 
@@ -151,6 +179,11 @@ def analyze_bicep_curl(output, capture):
                             (60,60), 
                             cv.FONT_HERSHEY_SIMPLEX, 2, (255,255,255), 2, cv.LINE_AA)
 
+                # Cheat indicator
+                if cheat_rep_detected:
+                    cv.putText(frame, 'CHEAT!', (60,60), 
+                                cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2, cv.LINE_AA)
+
 
                 
 
@@ -163,3 +196,4 @@ def analyze_bicep_curl(output, capture):
                 output.write(frame)
         print("Complete ROM rep count:", complete_rom_rep_counter)
         print("Partial ROM rep count:", partial_rom_rep_counter)
+        print("Cheat rep count:", cheat_rep_count)
