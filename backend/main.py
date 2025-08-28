@@ -138,30 +138,32 @@ def analyze_bicep_curl(output, capture):
                             last_recorded_angle = angle
                         elif (angle - last_recorded_angle >= 5.0):
                             if stage=="moving_up":
-                                stage = "moving_down"
-                                attempted_rep_counter += 1
+                                # First, ensure that the rep is valid and not just random movement (ex. walking)
+                                if (abs(max_angle_in_rep - min_angle_in_rep) >= 20.0):
+                                    stage = "moving_down"
+                                    attempted_rep_counter += 1
 
-                                eccentric_start_time = current_time
-                                
-                                # Update min/max angles for this rep
-                                if min_angle_in_rep is not None:
-                                    min_angle_in_rep = min(min_angle_in_rep, angle)
-                                    max_angle_in_rep = max(max_angle_in_rep, angle)
-                                
-                                # Determine if this was a complete or partial rep
-                                if min_angle_in_rep is not None and max_angle_in_rep is not None:
-                                    if min_angle_in_rep < 40.0 and max_angle_in_rep > 160.0:
-                                        complete_rom_rep_counter += 1
-                                        print("Complete rep")
-                                    else:
-                                        partial_rom_rep_counter += 1
-                                        print("Partial rep")
-                                
-                                # Reset for next rep
-                                min_angle_in_rep = None
-                                max_angle_in_rep = None
-                                cheat_rep_detected = False
-                                starting_torso_angle_recorded = False
+                                    eccentric_start_time = current_time
+                                    
+                                    # Update min/max angles for this rep
+                                    if min_angle_in_rep is not None:
+                                        min_angle_in_rep = min(min_angle_in_rep, angle)
+                                        max_angle_in_rep = max(max_angle_in_rep, angle)
+                                    
+                                    # Determine if this was a complete or partial rep
+                                    if min_angle_in_rep is not None and max_angle_in_rep is not None:
+                                        if min_angle_in_rep < 40.0 and max_angle_in_rep > 160.0:
+                                            complete_rom_rep_counter += 1
+                                            print("Complete rep")
+                                        else:
+                                            partial_rom_rep_counter += 1
+                                            print("Partial rep")
+                                    
+                                    # Reset for next rep
+                                    min_angle_in_rep = None
+                                    max_angle_in_rep = None
+                                    cheat_rep_detected = False
+                                    starting_torso_angle_recorded = False
                             last_recorded_angle = angle
                     else:
                         if angle > 140.0:
@@ -208,6 +210,7 @@ def analyze_bicep_curl(output, capture):
                 )
                 output.write(frame)
         print("Eccentric durations:", eccentric_durations)
+        print("Total rep count:", attempted_rep_counter)
         print("Complete ROM rep count:", complete_rom_rep_counter)
         print("Partial ROM rep count:", partial_rom_rep_counter)
         print("Cheat rep count:", cheat_rep_count)
