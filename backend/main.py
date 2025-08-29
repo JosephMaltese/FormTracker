@@ -10,6 +10,7 @@ mp_pose = mp.solutions.pose
 import numpy as np
 import math
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -41,7 +42,13 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
         score = 0
     capture.release()
     output.release()
-    return {"message": "Video Processed", "file": "processed.mp4", "total_score": score}
+    
+    return FileResponse(
+        "processed.mp4",
+        media_type="video/mp4",
+        filename="processed.mp4",
+        headers={"total_score": str(score)}
+    )
 
 
 def calculate_angle(a, b, c):
