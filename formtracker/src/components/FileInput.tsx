@@ -1,4 +1,5 @@
 import React, { ChangeEvent } from 'react';
+import { Upload, FileVideo } from 'lucide-react';
 
 interface FileInputProps {
     onFileSelect: (file: File) => void;
@@ -61,7 +62,10 @@ class FileInput extends React.Component<FileInputProps, FileInputState> {
             //         <button id="submit" type="submit" disabled={!this.state.fileSelected}>Submit</button>
             //     </form>
             // </div>
-            <div className='w-[80%] h-96 border-[4px] border-dotted border-black dark:border-white rounded-md flex justify-center items-center hover:cursor-pointer dark:bg-gray-700' onClick={this.handleDivClick}>
+            <div 
+                className='w-full h-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex justify-center items-center hover:cursor-pointer dark:bg-gray-800/50 hover:border-blue-400 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300 group' 
+                onClick={this.handleDivClick}
+            >
                 <input 
                     type="file" 
                     accept=".mp4"
@@ -70,16 +74,28 @@ class FileInput extends React.Component<FileInputProps, FileInputState> {
                     className="hidden"
                 />
                 { this.state.fileSelected ? (
-                    <video
-                    src={this.state.videoUrl ? this.state.videoUrl : ''}
-                    controls
-                    className="w-full h-full object-contain"
-                    />
+                    <div className='w-full h-full p-2'>
+                        <video
+                        src={this.state.videoUrl ? this.state.videoUrl : ''}
+                        controls
+                        className="w-full h-full object-contain rounded-lg shadow-lg"
+                        />
+                    </div>
                     ) : (
-                    <div className='flex flex-col items-center'>
-                        <img src="/images/fileIcon.png" alt="File Upload Icon" className='w-20 h-20'></img>
-                        <h2 className='font-extrabold mt-3'>Upload a file</h2>
-                        <p className='text-center w-64'>Click to browse and select a video file of 10-15 seconds in length</p>
+                    <div className='flex flex-col items-center p-4 text-center'>
+                        <div className='p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-3 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors duration-300'>
+                            <Upload className='h-8 w-8 text-blue-600 dark:text-blue-400' />
+                        </div>
+                        <h2 className='font-bold text-lg mb-2 text-gray-800 dark:text-gray-200'>
+                            Upload Video File
+                        </h2>
+                        <p className='text-gray-600 dark:text-gray-400 text-sm max-w-48 leading-relaxed'>
+                            Click to browse and select a video file of 10-15 seconds in length
+                        </p>
+                        <div className='mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                            <FileVideo className='w-3 h-3' />
+                            <span>Supports MP4 format</span>
+                        </div>
                     </div>   
                     )
                 }

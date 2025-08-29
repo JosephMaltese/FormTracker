@@ -9,8 +9,18 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 import numpy as np
 import math
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],  # GET, POST, PUT, DELETE etc.
+    allow_headers=["*"],  # allow all headers
+)
 
 @app.post("/analyze-video/")
 async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...)):
@@ -27,7 +37,8 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
 
     if (exercise == "BICEP CURL"):
         score = analyze_bicep_curl(output, capture)
-
+    else:
+        score = 0
     capture.release()
     output.release()
     return {"message": "Video Processed", "file": "processed.mp4", "total_score": score}

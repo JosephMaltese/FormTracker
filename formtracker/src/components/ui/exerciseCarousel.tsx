@@ -33,7 +33,7 @@ export default function ExerciseCarousel({ onSelect } : { onSelect: (exercise: s
             <div className="p-1">
               <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="relative">
-                  <img src={item[0]} alt={item[1]} className="rounded-xl max-h-[560px] w-full object-cover" />
+                  <img src={item[0]} alt={item[1]} className="rounded-xl max-h-[580px] w-full object-cover" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6">
                     <h2 className="text-white text-center text-3xl md:text-4xl font-bold drop-shadow-lg">
                       {item[1]}
