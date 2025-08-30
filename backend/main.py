@@ -11,6 +11,15 @@ import numpy as np
 import math
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+api_key = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
@@ -44,6 +53,17 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
         score = 0
     capture.release()
     output.release()
+
+
+    gptResponse = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Write me a short shorty about a dragon"}
+    ]
+)
+
+    print(gptResponse.choices[0].message.content)
     
     return FileResponse(
         "processed.mp4",
