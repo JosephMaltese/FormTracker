@@ -21,6 +21,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],  # GET, POST, PUT, DELETE etc.
     allow_headers=["*"],  # allow all headers
+    expose_headers=["total_score"],
 )
 
 @app.post("/analyze-video/")
@@ -30,7 +31,8 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
         shutil.copyfileobj(video, buffer)
     
     capture = cv.VideoCapture("input.mp4")
-    fourcc = cv.VideoWriter_fourcc(*"mp4v")
+    # fourcc = cv.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv.VideoWriter_fourcc(*"avc1")
     fps = int(capture.get(cv.CAP_PROP_FPS))
     width = int(capture.get(cv.CAP_PROP_FRAME_WIDTH))
     height = int(capture.get(cv.CAP_PROP_FRAME_HEIGHT))
