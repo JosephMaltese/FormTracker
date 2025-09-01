@@ -37,8 +37,24 @@ export default function Results() {
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
-                console.log("Successfully fetched results");
                 setScore(res.headers.get("total_score"));
+                const encodedAnalysis = res.headers.get("gpt_analysis");
+                if (encodedAnalysis) {
+                    try {
+                        const binaryString = atob(encodedAnalysis);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        const decodedAnalysis = new TextDecoder().decode(bytes);
+                        setAnalysis(decodedAnalysis);
+                    } catch (error) {
+                        console.error('Error decoding analysis:', error);
+                        setAnalysis('Error decoding analysis');
+                    }
+                }
+
+
                 const data = await res.blob();
                 setUrl(URL.createObjectURL(data));
                 setLoading(false);
@@ -102,7 +118,7 @@ export default function Results() {
                             <div className='flex flex-row bg-gradient-to-r justify-center items-center from-green-500 to-emerald-600 rounded-lg p-1 text-white shadow-lg'>
                                     <Trophy className='h-7 w-7 mr-2' />
                                     <h2 className='text-xl font-bold mr-4'>Score</h2>
-                                    <span className='text-3xl font-bold mr-1'>{score}</span>
+                                    <span className='text-3xl font-bold mr-1'>{Math.round(score)}</span>
                                     <span className='text-sm ml-1'>/ 100</span>
                             </div>
                         </div>
@@ -147,7 +163,7 @@ export default function Results() {
                             <div className='flex-1 p-3 overflow-y-auto'>
                                 {analysis ? (
                                     <div className='h-full'>
-                                        <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed'>
+                                        <p className='text-l text-gray-700 dark:text-gray-300 leading-relaxed'>
                                             {analysis}
                                         </p>
                                     </div>

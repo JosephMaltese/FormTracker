@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import base64
 
 load_dotenv()
 
@@ -30,7 +31,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],  # GET, POST, PUT, DELETE etc.
     allow_headers=["*"],  # allow all headers
-    expose_headers=["total_score"],
+    expose_headers=["total_score", "gpt_analysis"],
 )
 
 @app.post("/analyze-video/")
@@ -48,28 +49,33 @@ async def analyze_video(file: UploadFile = File(...), exercise: str = Form(...))
     output = cv.VideoWriter("processed.mp4", fourcc, fps, (width, height))
 
     if (exercise == "BICEP CURL"):
-        score = analyze_bicep_curl(output, capture)
+        (score, rep_count, complete_rom_rep_count, partial_rom_rep_count, cheat_rep_count, eccentric_durations, min_and_max_rep_angles) = analyze_bicep_curl(output, capture)
+        developer_prompt = "You are a helpful personal fitness assistant, providing feedback to a user regarding their exercise form. They will tell you which exercise they performed, and will provide some details about how they performed it (ex. relevant joint angles, eccentric rep duration, range of motion, etc.), and you will respond with a paragraph of constructive feedback, noting both the highlights and the drawbacks (if applicable) of their set. Do not judge them based on the number of repetitions they performed, as they only have 15 seconds to perform their set, so the purpose of this is to judge only their form while performing the set. They will tell you the total number of repetitons they performed, the number of those reps which were performed with complete range of motion (ROM), the number of those reps which were performed with partial ROM, the number of those which were performed with incomplete ROM, the number of those reps which were cheat reps, as well as a list of the durations of the eccentric motion of their reps, and a list containing a tuple for each rep, where the first element in the tuple is the minimum angle in the rep and the second element is the maximum angle in the rep. For clarity, a rep counts as any significant up + down movement. We use the angle between the elbow, shoulder, and wrist when analyzing the form. A rep with complete ROM is one where the minimum angle is <= 40 degrees and the maximum angle is >= 160 degrees. A partial ROM rep is one where one of the those two conditions don't hold. An incomplete rep is one where neither of those conditions are met. When analyzing cheat reps, we look at the angle between the hip, shoulder, and the vertical. If this angle deviates more than 6 degrees during the rep, we count it as a cheat rep (meaning they either used momentum or used poor posture to get their arm up). The eccentric durations are the amount of time it takes for the bicep to go from the contracted position to an elongated position. If the eccentric duration for a rep is less than 0.5s, we assign it a score of zero. Otherwise, we use a Gaussian curve centered at 3s with a width of 1s. Thus, reps ideally have an eccentric duration of 2-4s. Do not get too technical (for example, saying the exact angle their arm should bend at), but instead explain it to them in an understandable manner as if you were a personal trainer (ex. 'try to squeeze the bicep at the top and go slower on your eccentric motion'). Do not include any filler text/phrases (such as saying 'absolutely!'). Just provide your analysis."
+        user_prompt = f"Analyze my bicep curl form. I completed {rep_count} reps in total. {complete_rom_rep_count} of these reps were performed with complete ROM. {partial_rom_rep_count} of these reps were performed with partial ROM. {rep_count - complete_rom_rep_count - partial_rom_rep_count} of these reps were performed with incomplete ROM. {cheat_rep_count} of the reps were cheat reps. My eccentric durations were {eccentric_durations}. My minimum and maximum angles for each rep were {min_and_max_rep_angles}."
     else:
         score = 0
+        user_prompt = ""
     capture.release()
     output.release()
 
 
-    gptResponse = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Write me a short shorty about a dragon"}
-    ]
-)
+    # gptResponse = client.chat.completions.create(
+    # model="gpt-4o-mini",
+    # messages=[
+    #     {"role": "developer", "content": developer_prompt},
+    #     {"role": "user", "content": user_prompt}
+    # ]
+    # )
 
-    print(gptResponse.choices[0].message.content)
+    # gpt_analysis = gptResponse.choices[0].message.content
+    gpt_analysis = "great work!" # Temporary value
+    encoded_analysis = base64.b64encode(gpt_analysis.encode('utf-8')).decode('ascii')
     
     return FileResponse(
         "processed.mp4",
         media_type="video/mp4",
         filename="processed.mp4",
-        headers={"total_score": str(score)}
+        headers={"total_score": str(score), "gpt_analysis": encoded_analysis }
     )
 
 
@@ -102,6 +108,7 @@ def analyze_bicep_curl(output, capture):
         frame_count = 0
         eccentric_durations = []
         eccentric_start_time = None
+        min_and_max_rep_angles = []
 
         with mp_pose.Pose(
         min_detection_confidence = 0.5,
@@ -199,6 +206,9 @@ def analyze_bicep_curl(output, capture):
                                             partial_rom_rep_counter += 1
                                             print("Partial rep")
                                     
+                                    # Store min and max rep angles
+                                    min_and_max_rep_angles.append((min_angle_in_rep, max_angle_in_rep))
+
                                     # Reset for next rep
                                     min_angle_in_rep = None
                                     max_angle_in_rep = None
@@ -282,7 +292,7 @@ def analyze_bicep_curl(output, capture):
         duration_score = (duration_points / possible_duration_points) * 20
         total_score += duration_score
 
-        return total_score
+        return (total_score, attempted_rep_counter, complete_rom_rep_counter, partial_rom_rep_counter, cheat_rep_count, eccentric_durations, min_and_max_rep_angles)
 
         
 def eccentric_score(duration):
